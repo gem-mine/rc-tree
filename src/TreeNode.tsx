@@ -6,7 +6,14 @@ import CSSMotion from 'rc-animate/lib/CSSMotion';
 import toArray from 'rc-util/lib/Children/toArray';
 import { polyfill } from 'react-lifecycles-compat';
 import { TreeContext, TreeContextProps } from './contextTypes';
-import { getNodeChildren, getDataAndAria, mapChildren, warnOnlyTreeNode } from './util';
+import {
+  getNodeChildren,
+  getDataAndAria,
+  mapChildren,
+  warnOnlyTreeNode,
+  isIe9,
+  isExistTag,
+} from './util';
 import { IconType } from './interface';
 
 const ICON_OPEN = 'open';
@@ -54,6 +61,8 @@ export interface TreeNodeState {
 }
 
 class TreeNode extends React.Component<InternalTreeNodeProps, TreeNodeState> {
+  public selectHandle: HTMLSpanElement;
+
   static propTypes = {
     eventKey: PropTypes.string, // Pass by parent `cloneElement`
     prefixCls: PropTypes.string,
@@ -88,8 +97,6 @@ class TreeNode extends React.Component<InternalTreeNodeProps, TreeNodeState> {
   public state = {
     dragNodeHighlight: false,
   };
-
-  public selectHandle: HTMLSpanElement;
 
   // Isomorphic needn't load data in server side
   componentDidMount() {
@@ -472,7 +479,21 @@ class TreeNode extends React.Component<InternalTreeNodeProps, TreeNodeState> {
     }
 
     // Title
-    const $title = <span className={`${prefixCls}-title`}>{title}</span>;
+    // https://github.com/ant-design/ant-design/issues/7460
+    let $title: React.ReactNode = null;
+    if (isIe9() && !isExistTag(title, 'a')) {
+      // ie9 且 不存在a标签
+      // 如果有a标签存在title又有个a标签，ie9会报警告
+      $title = (
+        <span className={`${prefixCls}-title`}>
+          <a className={`${prefixCls}-title-ie9`} href="#">
+            {title}
+          </a>
+        </span>
+      );
+    } else {
+      $title = <span className={`${prefixCls}-title`}>{title}</span>;
+    }
 
     return (
       <span

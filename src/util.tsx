@@ -454,3 +454,32 @@ export function getDataAndAria(props: Partial<TreeProps | TreeNodeProps>) {
     return prev;
   }, {});
 }
+
+export function isIe9() {
+  return !window.atob;
+}
+export interface TempProps {
+  children?: React.ReactNode;
+}
+
+// 判断ReactNode里面是否存在某个标签
+export function isExistTag(node: React.ReactNode, tag: string): boolean {
+  if (!React.isValidElement(node)) {
+    return false;
+  }
+  let stark: React.ReactNode[] = [];
+  stark = stark.concat(node);
+  while (stark.length) {
+    const temp = stark.shift();
+    if (temp && React.isValidElement(temp)) {
+      if (temp.type && temp.type === tag) {
+        return true;
+      }
+      const { props } = temp;
+      if (props && props.children) {
+        stark = ([] as React.ReactNode[]).concat(props.children).concat(stark);
+      }
+    }
+  }
+  return false;
+}
